@@ -32,15 +32,54 @@ then
     exit 1
 fi
 
+function get_shenvrc_path() {
+    curpath="$1"
+    if [[ $curpath = '/' ]]
+    then
+        return
+    fi
+
+    shenvrc="$curpath/.shenvrc"
+    if [[ -f $shenvrc ]]
+    then
+        echo $shenvrc
+        return
+    fi
+
+    get_shenvrc_path $(dirname $curpath)
+}
+
 function use_cmd() {
     if [[ $# == 0 ]]
     then
-        echo "Usage: $cli_name use <config>"
+        shenvrc_path=$(get_shenvrc_path $PWD)
+        if [[ ! -f $shenvrc_path ]]
+        then
+            echo "Can't find .shenvrc"
+            exit 1
+        fi
+
+        config="$(cat $shenvrc_path)"
+    else
+        config="$1"
+    fi
+
+    if [[ -z ${config} ]]
+    then
+        echo "config cannot be empty"
         exit 1
     fi
 
-    config="$1"
-    source "$SHENV_CONFIGS_PATH/$config"
+    shenv_config="$SHENV_CONFIGS_PATH/$config"
+    if [[ ! -f $shenv_config ]]
+    then
+        echo "Config $config not found"
+        exit 1
+    fi
+
+    echo -n "Sourcing $config... "
+    source $shenv_config
+    echo "Done."
 }
 
 function edit_cmd() {
